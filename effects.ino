@@ -35,7 +35,7 @@ void EffectTheater::Draw(LedStrip *strip)
 void EffectFlash::Draw(LedStrip *strip)
 {
     const int onDuration = 50;
-    const int nSegments = 12;
+    const int nSegments = 20;
     const int nFlashes = 2;
 
     int stripSize = strip->Size()/nSegments;

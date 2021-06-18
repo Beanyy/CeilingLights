@@ -28,12 +28,10 @@ class AniFlash : public Animation
 {
 private:
     EffectFlash flash;
-    LedStrip *inner;
-    LedStrip *outer;
+    LedStrip *leds;
 
 public:
-    AniFlash(LedStrip *inner, LedStrip *outer) : inner(inner),
-                                                 outer(outer)
+    AniFlash(LedStrip *leds) : leds(leds)
     {
         this->AddEffect(&flash);
     }
@@ -45,12 +43,10 @@ class AniParticle : public Animation
 private:
     EffectParticle particle;
     Effect color;
-    LedStrip *inner;
-    LedStrip *outer;
+    LedStrip *leds;
 
 public:
-    AniParticle(LedStrip *inner, LedStrip *outer) : inner(inner),
-                                                    outer(outer)
+    AniParticle(LedStrip *leds) : leds(leds)
     {
         color.duration = 15000;
         this->AddEffect(&color);
@@ -79,21 +75,16 @@ class AniZoom : public Animation
 {
 private:
     EffectParticle particle;
-    EffectBreathe breathe;
     Effect color;
-    LedStrip *inner;
-    LedStrip *outer;
+    LedStrip *leds;
 
 public:
-    AniZoom(LedStrip *inner, LedStrip *outer) : inner(inner),
-                                                outer(outer)
+    AniZoom(LedStrip *leds) : leds(leds)
     {
         color.duration = 15000;
         particle.duration = 1000;
-        breathe.duration = 1000;
         this->AddEffect(&color);
         this->AddEffect(&particle);
-        this->AddEffect(&breathe);
     }
     virtual void DrawImpl(unsigned long time) override;
 };
@@ -116,12 +107,10 @@ class AniRainbow : public Animation
 {
 private:
     EffectParticle particle;
-    LedStrip *inner;
-    LedStrip *outer;
+    LedStrip *leds;
 
 public:
-    AniRainbow(LedStrip *inner, LedStrip *outer) : inner(inner),
-                                                  outer(outer)
+    AniRainbow(LedStrip *leds) : leds(leds)
     {
         particle.duration = 1500;
         this->AddEffect(&particle);

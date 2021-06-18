@@ -1,26 +1,18 @@
 
+
+
 #include <WS2812B.h>
 #include <FastLED.h>
 #include "animations.hpp"
 #include "dataDict.hpp"
-#include "servoAnimation.hpp"
-#include "Servo.h"
 
-//#define MOTOR_DISABLE
-#define LEDS_INNER 36
-#define LEDS_OUTER 112
-#define NUM_ANIMATIONS 7
+#define NLEDS 600
+#define NUM_ANIMATIONS 6
 
-WS2812B strip = WS2812B(LEDS_INNER + LEDS_OUTER);
-CRGB leds[LEDS_INNER + LEDS_OUTER];
-LedStrip ledsInner(&leds[0], LEDS_INNER);
-LedStrip ledsOuter(&leds[LEDS_INNER], LEDS_OUTER);
-LedStrip ledsAll(&leds[0], LEDS_OUTER + LEDS_INNER);
+WS2812B strip = WS2812B(NLEDS);
+CRGB leds[NLEDS];
+LedStrip ledsAll(&leds[0], NLEDS);
 DataDict stateMutator;
-
-Servo motorFront;
-Servo motorBack;
-DualServoAnimation servoAnimation(88, 97, 75, 95);
 
 // void sendCommand(const char *cmd)
 // {
@@ -40,8 +32,6 @@ struct AppState {
 	int pause;
 	int colorOverride;
 	int rotationOverride;
-	int frontSpeed;
-	int backSpeed;
 } state;
 
 void ResetAppState()
@@ -53,8 +43,6 @@ void ResetAppState()
 	stateMutator.AddEntry('x', sizeof(state.rotationOverride), &state.rotationOverride);
 	stateMutator.AddEntry('o', sizeof(state.off), &state.off);
 	stateMutator.AddEntry('p', sizeof(state.pause), &state.pause);
-	stateMutator.AddEntry('f', sizeof(state.frontSpeed), &state.frontSpeed);
-	stateMutator.AddEntry('b', sizeof(state.backSpeed), &state.backSpeed);
 
 	state.color = CRGB(CHSV(93, 255, 20));
 	state.animation = -1;
@@ -63,8 +51,6 @@ void ResetAppState()
 	state.colorOverride = 0;
 	state.off = 0;
 	state.pause = 0;
-	state.frontSpeed = 90;
-	state.backSpeed = 90;
 	return;
 }
 
@@ -131,11 +117,11 @@ void registerAnimation(Animation *ani, enum AnimationMode mode)
 
 unsigned long curTime;
 unsigned long lastSwapTime;
-AniWipe aniWipe(&ledsInner, &ledsOuter);
-AniFlash aniFlash(&ledsInner, &ledsOuter);
-AniParticle aniParticle(&ledsInner, &ledsOuter);
-AniZoom aniZoom(&ledsInner, &ledsOuter);
-AniRainbow aniRainbow(&ledsInner, &ledsOuter);
+/*AniWipe aniWipe(&ledsInner, &ledsOuter);*/
+AniFlash aniFlash(&ledsAll);
+AniParticle aniParticle(&ledsAll);
+AniZoom aniZoom(&ledsAll);
+AniRainbow aniRainbow(&ledsAll);
 AniSparkle aniSparkle(&ledsAll);
 AniConfetti aniConfetti(&ledsAll);
 
@@ -151,21 +137,18 @@ void setup()
 	for (int i = 0; i < NUM_ANIMATIONS; i++)
 		aniList.animation[i] = NULL;
 	//REMEMBER TO UPDATE NUM_ANIMATIONS
-	registerAnimation(&aniWipe, MODE_EXTEND);
+	/*registerAnimation(&aniWipe, MODE_EXTEND);*/
 	registerAnimation(&aniFlash, MODE_EXTEND);
 	registerAnimation(&aniParticle, MODE_EXTEND);
 	registerAnimation(&aniZoom, MODE_EXTEND);
 	registerAnimation(&aniRainbow, MODE_EXTEND);
+    registerAnimation(&aniConfetti, MODE_EXTEND);
 	registerAnimation(&aniSparkle, MODE_EXTEND);
-	registerAnimation(&aniConfetti, MODE_EXTEND);
 
+  
 	curTime = millis();
 	lastSwapTime = curTime;
 
-	#ifndef MOTOR_DISABLE
-	motorFront.attach(PA1);
-	motorBack.attach(PA0);
-	#endif
 	ResetAppState();
 }
 
@@ -184,6 +167,7 @@ int getLoopAnimation()
 			} while (aniList.mode[aniList.current] == MODE_SKIP);
 		}
 	}
+	return aniList.current;
 }
 
 void runAnimation(Animation *a)
@@ -202,7 +186,7 @@ void runAnimation(Animation *a)
 
 void loop()
 {
-	int minDelay = 16;
+	int minDelay = 30;
 	curTime = millis();
 	parseCommand();
 
@@ -210,25 +194,13 @@ void loop()
 	if (a < NUM_ANIMATIONS && aniList.animation[a])
 		runAnimation(aniList.animation[a]);
 
-	for (int i = 0; i < LEDS_INNER + LEDS_OUTER; i++) {
+	for (int i = 0; i < NLEDS; i++) {
 		if (!state.off)
 			strip.setPixelColor(i, strip.Color(leds[i].r, leds[i].g, leds[i].b));
 		else
 			strip.setPixelColor(i, strip.Color(0, 0, 0));
 	}
 	strip.show();
-
-	#ifndef MOTOR_DISABLE
-	if (state.rotationOverride) {
-		motorFront.write(state.frontSpeed);
-		motorBack.write(state.backSpeed);
-	}
-	else {
-		servoAnimation.Draw(curTime);
-		motorFront.write(servoAnimation.val[0]);
-		motorBack.write(servoAnimation.val[1]);
-	}
-	#endif
 
 	unsigned long duration = millis() - curTime;
 	if (duration < minDelay)
