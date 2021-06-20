@@ -6,8 +6,8 @@
 #include "animations.hpp"
 #include "dataDict.hpp"
 
-#define NLEDS 600
-#define NUM_ANIMATIONS 6
+#define NLEDS 562
+#define NUM_ANIMATIONS 10
 
 WS2812B strip = WS2812B(NLEDS);
 CRGB leds[NLEDS];
@@ -117,13 +117,16 @@ void registerAnimation(Animation *ani, enum AnimationMode mode)
 
 unsigned long curTime;
 unsigned long lastSwapTime;
-/*AniWipe aniWipe(&ledsInner, &ledsOuter);*/
+AniWipe aniWipe(&ledsAll);
 AniFlash aniFlash(&ledsAll);
 AniParticle aniParticle(&ledsAll);
+AniMultiParticle aniMultiParticle(&ledsAll);
 AniZoom aniZoom(&ledsAll);
 AniRainbow aniRainbow(&ledsAll);
 AniSparkle aniSparkle(&ledsAll);
 AniConfetti aniConfetti(&ledsAll);
+AniTheater aniTheater(&ledsAll);
+AniBreathe aniBreathe(&ledsAll);
 
 void setup()
 {
@@ -137,13 +140,17 @@ void setup()
 	for (int i = 0; i < NUM_ANIMATIONS; i++)
 		aniList.animation[i] = NULL;
 	//REMEMBER TO UPDATE NUM_ANIMATIONS
-	/*registerAnimation(&aniWipe, MODE_EXTEND);*/
-	registerAnimation(&aniFlash, MODE_EXTEND);
-	registerAnimation(&aniParticle, MODE_EXTEND);
-	registerAnimation(&aniZoom, MODE_EXTEND);
-	registerAnimation(&aniRainbow, MODE_EXTEND);
-    registerAnimation(&aniConfetti, MODE_EXTEND);
-	registerAnimation(&aniSparkle, MODE_EXTEND);
+//  registerAnimation(&aniSparkle, MODE_EXTEND);
+//  registerAnimation(&aniParticle, MODE_EXTEND);
+  registerAnimation(&aniMultiParticle, MODE_EXTEND);
+//  registerAnimation(&aniConfetti, MODE_EXTEND);
+//  registerAnimation(&aniFlash, MODE_EXTEND);
+//  registerAnimation(&aniRainbow, MODE_EXTEND);
+//	registerAnimation(&aniWipe, MODE_EXTEND);
+//	registerAnimation(&aniZoom, MODE_EXTEND);
+//	registerAnimation(&aniRainbow, MODE_EXTEND);
+//  registerAnimation(&aniTheater, MODE_EXTEND);
+//  registerAnimation(&aniBreathe, MODE_EXTEND);
 
   
 	curTime = millis();
@@ -155,7 +162,7 @@ void setup()
 int getLoopAnimation()
 {
 	const int skip = 1;
-	int swapTime = (aniList.mode[aniList.current] == MODE_EXTEND) ? 20000 : 10000;
+	int swapTime = (aniList.mode[aniList.current] == MODE_EXTEND) ? 10000 : 5000;
 	if (curTime - lastSwapTime > swapTime)
 	{
 		lastSwapTime = curTime;
@@ -186,7 +193,7 @@ void runAnimation(Animation *a)
 
 void loop()
 {
-	int minDelay = 30;
+	int minDelay = 20;
 	curTime = millis();
 	parseCommand();
 

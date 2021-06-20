@@ -79,6 +79,12 @@ LedStrip &LedStrip::SetDir(bool f)
     return *this;
 }
 
+LedStrip &LedStrip::SetBlendMode(BlendMode mode)
+{
+    blendMode = mode;
+    return *this;
+}
+
 LedStrip &LedStrip::SetLED(int pos, CRGB color)
 {
     int element = pos + offset;
@@ -99,7 +105,21 @@ LedStrip &LedStrip::SetLED(int pos, CRGB color)
 
     if (frac == 256)
     {
-        leds[element] = color;
+        if (blendMode == BLEND_MODE_NONE) {
+          leds[element] = color;
+        } else if (blendMode == BLEND_MODE_HALF) {
+          leds[element].r = (leds[element].r * 128 + color.r * 128) / 256;
+          leds[element].g = (leds[element].g * 128 + color.g * 128) / 256;
+          leds[element].b = (leds[element].b * 128 + color.b * 128) / 256;
+        } else if (blendMode == BLEND_MODE_ADD) {
+          leds[element].r = min(leds[element].r + color.r, 255);
+          leds[element].g = min(leds[element].g + color.g, 255);
+          leds[element].b = min(leds[element].b + color.b, 255);
+        } else if (blendMode == BLEND_MODE_MAXIMUM) {
+          leds[element].r = max(color.r, leds[element].r);
+          leds[element].g = max(color.g, leds[element].g);
+          leds[element].b = max(color.b, leds[element].b);
+        }
     }
     else if (frac > 0)
     {
@@ -134,7 +154,7 @@ LedStrip &LedStrip::DrawColor(CRGB color)
     return *this;
 }
 
-LedStrip &LedStrip::DrawGradient(uint16_t hueStart, uint16_t hueEnd, int size)
+LedStrip &LedStrip::DrawGradient(uint16_t hueStart, uint16_t hueEnd, int size, int brightness)
 {
     if (hueStart > hueEnd)
         hueEnd += 255;
@@ -142,7 +162,7 @@ LedStrip &LedStrip::DrawGradient(uint16_t hueStart, uint16_t hueEnd, int size)
     for (int i = 0; i < size; i++)
     {
         uint8_t hue = lerp16by8(hueStart, hueEnd, 255 * i / (size - 1));
-        SetLED(i, CHSV(hue, 255, 255));
+        SetLED(i, CHSV(hue, 255, brightness));
     }
     return *this;
 }
@@ -151,7 +171,7 @@ LedStrip &LedStrip::DrawRandom(int num)
 {
     for (uint8_t i = 0; i < num; i++)
     {
-        uint8_t pos = rand() % nLeds;
+        uint16_t pos = rand() % nLeds;
         SetLED(pos, CHSV(rand(), 255, 128));
     }
     return *this;

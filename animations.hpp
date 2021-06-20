@@ -7,18 +7,14 @@ class AniWipe : public Animation
 {
 private:
     EffectWipe wipe;
-    Effect spin;
-    LedStrip *inner;
-    LedStrip *outer;
+    LedStrip *leds;
     unsigned char hue = HUE_GREEN;
     int lastProgress = 0;
 
 public:
-    AniWipe(LedStrip *inner, LedStrip *outer) : inner(inner),
-                                                outer(outer)
+    AniWipe(LedStrip *leds) : leds(leds)
     {
-        spin.duration = 3000;
-        this->AddEffect(&spin);
+        wipe.duration = 6000;
         this->AddEffect(&wipe);
     }
     virtual void DrawImpl(unsigned long time) override;
@@ -48,9 +44,11 @@ private:
 public:
     AniParticle(LedStrip *leds) : leds(leds)
     {
-        color.duration = 15000;
+        color.duration = 30000;
         this->AddEffect(&color);
-        particle.duration = 1500;
+        particle.duration = 10000;
+        particle.reverse = false;
+        particle.streakSize = 49;
         this->AddEffect(&particle);
     }
     virtual void DrawImpl(unsigned long time) override;
@@ -82,7 +80,7 @@ public:
     AniZoom(LedStrip *leds) : leds(leds)
     {
         color.duration = 15000;
-        particle.duration = 1000;
+        particle.duration = 5000;
         this->AddEffect(&color);
         this->AddEffect(&particle);
     }
@@ -119,5 +117,55 @@ public:
 };
 
 
+class AniTheater : public Animation
+{
+private:
+    EffectTheater theater;
+    LedStrip *leds;
+
+public:
+    AniTheater(LedStrip *leds) : leds(leds)
+    {
+        this->AddEffect(&theater);
+    }
+    virtual void DrawImpl(unsigned long time) override;
+};
+
+
+class AniBreathe : public Animation
+{
+private:
+    EffectBreathe breathe;
+    LedStrip *leds;
+    int lastProgress = 0;
+    int extraOffset = 0;
+    
+public:
+    AniBreathe(LedStrip *leds) : leds(leds)
+    {
+        breathe.duration = 1000;
+        breathe.lightPercent = 0.45;
+        this->AddEffect(&breathe);
+    }
+    virtual void DrawImpl(unsigned long time) override;
+};
+
+class AniMultiParticle : public Animation
+{
+private:
+    EffectParticle particle;
+    Effect color;
+    LedStrip *leds;
+    
+public:
+    AniMultiParticle(LedStrip *leds) : leds(leds)
+    {
+        color.duration = 30000;
+        this->AddEffect(&color);
+        particle.duration = 10000;
+        this->AddEffect(&particle);
+    }
+    virtual void DrawImpl(unsigned long time) override;
+};
 
 #endif
