@@ -168,4 +168,19 @@ public:
     virtual void DrawImpl(unsigned long time) override;
 };
 
+class AniConfetti2 : public Animation
+{
+private:
+    LedStrip *leds;
+    Effect hue;
+
+public:
+    AniConfetti2(LedStrip *leds) : leds(leds)
+    {
+        hue.duration = 30000;
+        this->AddEffect(&hue);
+    }
+    virtual void DrawImpl(unsigned long time) override;
+};
+
 #endif

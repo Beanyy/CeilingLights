@@ -154,15 +154,15 @@ LedStrip &LedStrip::DrawColor(CRGB color)
     return *this;
 }
 
-LedStrip &LedStrip::DrawGradient(uint16_t hueStart, uint16_t hueEnd, int size, int brightness)
+LedStrip &LedStrip::DrawGradient(CHSV color, uint16_t hueEnd, int size)
 {
-    if (hueStart > hueEnd)
+    if (color.h > hueEnd)
         hueEnd += 255;
         
     for (int i = 0; i < size; i++)
     {
-        uint8_t hue = lerp16by8(hueStart, hueEnd, 255 * i / (size - 1));
-        SetLED(i, CHSV(hue, 255, brightness));
+        uint8_t actualHue = lerp16by8(color.h, hueEnd, 255 * i / (size - 1));
+        SetLED(i, CHSV(actualHue, color.s, color.v));
     }
     return *this;
 }
@@ -190,12 +190,12 @@ LedStrip &LedStrip::DrawTriangle(int size, uint8_t hue)
     return *this;
 }
 
-LedStrip &LedStrip::DrawStreak(int size, uint8_t hue, bool fowards, unsigned char brightness)
+LedStrip &LedStrip::DrawStreak(CHSV color, int size, bool fowards)
 {
     for (int i = 0; i < size; i++)
     {
-        CRGB color = CHSV(hue, 255, brightness * (size - i) / size);
-        SetLED(fowards ? i : -i, color);
+        CRGB actualColor = CHSV(color.h, color.s, color.v * (size - i) / size);
+        SetLED(fowards ? i : -i, actualColor);
     }
     return *this;
 }

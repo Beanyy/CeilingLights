@@ -25,10 +25,10 @@ public:
   LedStrip &SetLED(int pos, CRGB color);
 
   LedStrip &DrawColor(CRGB color);
-  LedStrip &DrawGradient(uint16_t hueStart, uint16_t hueEnd, int size, int brightness = 255);
+  LedStrip &DrawGradient(CHSV color, uint16_t hueEnd, int size);
   LedStrip &DrawRandom(int num);
   LedStrip &DrawTriangle(int size, uint8_t hue);
-  LedStrip &DrawStreak(int size, uint8_t hue, bool fowards, unsigned char brightness);
+  LedStrip &DrawStreak(CHSV color, int size, bool fowards);
   LedStrip &Shift(int m);
 
   LedStrip &Reset();

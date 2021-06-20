@@ -11,12 +11,15 @@ void AniWipe::DrawImpl(unsigned long time)
 		hue += 144;
 
 	lastProgress = progress;
-	wipe.color = CHSV(hue, 255, 100);
+	wipe.colorHsv = CHSV(hue, 255, 100);
 	wipe.invert = 0;
 	wipe.Draw(leds);
-	wipe.color = CHSV(hue + 111, 255, 100);
+	unsigned char originalHue = wipe.forceColorHsv.h;
+	wipe.forceColorHsv.h += 111;
+	wipe.colorHsv = CHSV(hue + 111, 255, 100);
 	wipe.invert = 1;
 	wipe.Draw(leds);
+	wipe.forceColorHsv.h = originalHue;
 }
 
 void AniFlash::DrawImpl(unsigned long time)
@@ -28,12 +31,12 @@ void AniFlash::DrawImpl(unsigned long time)
 void AniParticle::DrawImpl(unsigned long time)
 {
 	leds->Clear();
-  const int particleCount = 12;
+	const int particleCount = 12;
 	particle.gradient = false;
 	for (size_t i = 0; i < particleCount; i++)
 	{
-    particle.streakSize = leds->Size()/particleCount;
-		particle.hue = 128 * i + mapFloat(color.Progress(), 0, color.duration, 0, 255);
+		particle.streakSize = leds->Size()/particleCount;
+		particle.colorHsv = CHSV(128 * i + mapFloat(color.Progress(), 0, color.duration, 0, 255), 255, 128);
 		particle.progessOffset = (particle.duration / particleCount) * i;
 		particle.Draw(leds);
 	}
@@ -41,7 +44,11 @@ void AniParticle::DrawImpl(unsigned long time)
 
 void AniConfetti::DrawImpl(unsigned long time)
 {
-	unsigned char hueOffset = mapFloat(hue.Progress(), 0, hue.duration, 0, 255);
+	unsigned char hueOffset;
+	if (!hue.forceColor)
+		hueOffset = mapFloat(hue.Progress(), 0, hue.duration, 0, 255);
+	else
+		hueOffset = hue.forceColorHsv.h;
 	fadeToBlackBy(leds->Leds(), leds->Size(), 10);
 	leds->SetDir(true).SetOffset(0).SetWrap(true).SetViewport(0, leds->Size());
 	int pos;
@@ -58,10 +65,9 @@ void AniZoom::DrawImpl(unsigned long time)
 	unsigned char hueOffset = mapFloat(color.Progress(), 0, color.duration, 0, 255);
 	particle.gradient = true;
 
-	particle.hueBegin = hueOffset;
-	particle.hue = hueOffset + 64;
+	particle.colorHsv = CHSV(hueOffset, 255, 128);
+	particle.hueLength = 64;
 	particle.reverse = false;
-  particle.brightness = 128;
 	particle.streakSize = leds->Size() / 2;
 	particle.progessOffset = 0;
 	particle.Draw(leds);
@@ -81,11 +87,10 @@ void AniRainbow::DrawImpl(unsigned long time)
 	leds->Clear();
 	particle.gradient = true;
 	{
-		particle.hueBegin = 0;
-		particle.hue = 255;
+		particle.colorHsv = CHSV(0, 255, 128);
+		particle.hueLength = 255;
 		particle.reverse = true;
 		particle.streakSize = leds->Size() / 2;
-    particle.brightness = 128;
 		particle.progessOffset = 0;
 		particle.Draw(leds);
 		particle.progessOffset += particle.duration/2;
@@ -96,7 +101,7 @@ void AniRainbow::DrawImpl(unsigned long time)
 void AniTheater::DrawImpl(unsigned long time)
 {
   leds->Clear();
-  theater.color = CRGB(20, 20, 20);
+  theater.colorRgb = CRGB(20, 20, 20);
   theater.Draw(leds);
 }
 
@@ -107,19 +112,21 @@ void AniBreathe::DrawImpl(unsigned long time)
   int progress = breathe.Progress();
   if ((breathe.speed > 0 && progress < lastProgress) || (breathe.speed < 0 && progress > lastProgress))
   {
-      breathe.hue += 5;
+      breathe.colorHsv.h += 144;
       extraOffset = (!extraOffset) ? segmentSize / 2 : 0;
   }
   lastProgress = progress;
-  int lastHue = breathe.hue;
+  breathe.colorHsv.s = 255;
+  breathe.colorHsv.v = 150;
+  int lastHue = breathe.colorHsv.h;
   for (int i = 0; i < 20; i++)
   {
-      breathe.hue += 0;
+      breathe.colorHsv.h += 0;
       breathe.size = segmentSize;
       breathe.offset = breathe.size * i + extraOffset;
       breathe.Draw(leds);   
   }
-  breathe.hue = lastHue;
+  breathe.colorHsv.h = lastHue;
 }
 
 void AniMultiParticle::DrawImpl(unsigned long time)
@@ -130,17 +137,35 @@ void AniMultiParticle::DrawImpl(unsigned long time)
   for (size_t i = 0; i < particleCount; i++)
   {
     int hueOffset = mapFloat(color.Progress(), 0, color.duration, 0, 255);
-    particle.hue = HUE_RED + hueOffset;
+    particle.colorHsv = CHSV(HUE_RED + hueOffset, 255, 128);
     particle.streakSize = leds->Size() / (particleCount*2);
     particle.progessOffset = (particle.duration / particleCount) * i;
     
     leds->SetBlendMode(LedStrip::BLEND_MODE_ADD);
     particle.reverse = false;
     particle.Draw(leds);
-    particle.hue = HUE_GREEN + hueOffset;
+	particle.colorHsv.h = HUE_GREEN + hueOffset;
+
+	unsigned char originalHue = particle.forceColorHsv.h;
+	particle.forceColorHsv.h += HUE_GREEN;
     particle.reverse = true;
     particle.Draw(leds);
+	particle.forceColorHsv.h = originalHue;
     leds->SetBlendMode(LedStrip::BLEND_MODE_NONE);
     
   }
+}
+
+void AniConfetti2::DrawImpl(unsigned long time)
+{
+	unsigned char hueOffset = mapFloat(hue.Progress(), 0, hue.duration, 0, leds->Size());
+	fadeToBlackBy(leds->Leds(), leds->Size(), 10);
+	leds->SetDir(true).SetOffset(0).SetWrap(true).SetViewport(0, leds->Size());
+	int pos;
+
+	for (int i=0; i<10; i++) {
+		pos = random16(leds->Size());
+		unsigned char hueStart = mapFloat(pos, 0, leds->Size(), 0, 255);
+		leds->SetLED(pos, CHSV(hueOffset + hueStart + random8(64), 200, 255));	
+	}
 }

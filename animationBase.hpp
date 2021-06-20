@@ -41,10 +41,19 @@ public:
     void Resume() {
         state = Running;
     }
-    void ColorOverride(CRGB color)
+    void ColorOverride(CRGB colorRgb, CHSV colorHsv)
     {
-        for (int i = 0; i < nEffects; i++)
-            effects[i]->color = color;
+        for (int i = 0; i < nEffects; i++) {
+            effects[i]->forceColor = true;
+            effects[i]->forceColorRgb = colorRgb;
+            effects[i]->forceColorHsv = colorHsv;
+        }
+    }
+    void DisableColorOverride()
+    {
+        for (int i = 0; i < nEffects; i++) {
+            effects[i]->forceColor = false;
+        }
     }
     void SetSpeed(float speed)
     {

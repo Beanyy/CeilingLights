@@ -7,7 +7,7 @@
 #include "dataDict.hpp"
 
 #define NLEDS 562
-#define NUM_ANIMATIONS 10
+#define NUM_ANIMATIONS 11
 
 WS2812B strip = WS2812B(NLEDS);
 CRGB leds[NLEDS];
@@ -31,7 +31,6 @@ struct AppState {
 	int off;
 	int pause;
 	int colorOverride;
-	int rotationOverride;
 } state;
 
 void ResetAppState()
@@ -40,14 +39,12 @@ void ResetAppState()
 	stateMutator.AddEntry('a', sizeof(state.animation), &state.animation);
 	stateMutator.AddEntry('s', sizeof(state.speed), &state.speed);
 	stateMutator.AddEntry('c', sizeof(state.colorOverride), &state.colorOverride);
-	stateMutator.AddEntry('x', sizeof(state.rotationOverride), &state.rotationOverride);
 	stateMutator.AddEntry('o', sizeof(state.off), &state.off);
 	stateMutator.AddEntry('p', sizeof(state.pause), &state.pause);
 
 	state.color = CRGB(CHSV(93, 255, 20));
 	state.animation = -1;
 	state.speed = 128;
-	state.rotationOverride = 0;
 	state.colorOverride = 0;
 	state.off = 0;
 	state.pause = 0;
@@ -63,7 +60,10 @@ void executeCommand(char *cmd)
 	}
 	else if (cmd[0] == 'C') {
 		long hexColor = strtol(&cmd[1], NULL, 16);
-		CRGB color = CRGB(hexColor & 0xFF, hexColor & 0xFF00 >> 8, hexColor & 0xFF0000 >> 16);
+		unsigned char blue = hexColor & 0xFF;
+		unsigned char green = (hexColor & 0xFF00) >> 8;
+		unsigned char red = (hexColor & 0xFF0000) >> 16;
+		CRGB color = CRGB(red>>1, green>>1, blue>>1);
 		stateMutator.SetEntry(cmd[0], &color);
 	}
 	else {
@@ -127,6 +127,7 @@ AniSparkle aniSparkle(&ledsAll);
 AniConfetti aniConfetti(&ledsAll);
 AniTheater aniTheater(&ledsAll);
 AniBreathe aniBreathe(&ledsAll);
+AniConfetti2 aniConfetti2(&ledsAll);
 
 void setup()
 {
@@ -140,19 +141,18 @@ void setup()
 	for (int i = 0; i < NUM_ANIMATIONS; i++)
 		aniList.animation[i] = NULL;
 	//REMEMBER TO UPDATE NUM_ANIMATIONS
-//  registerAnimation(&aniSparkle, MODE_EXTEND);
-//  registerAnimation(&aniParticle, MODE_EXTEND);
-  registerAnimation(&aniMultiParticle, MODE_EXTEND);
-//  registerAnimation(&aniConfetti, MODE_EXTEND);
-//  registerAnimation(&aniFlash, MODE_EXTEND);
-//  registerAnimation(&aniRainbow, MODE_EXTEND);
-//	registerAnimation(&aniWipe, MODE_EXTEND);
-//	registerAnimation(&aniZoom, MODE_EXTEND);
-//	registerAnimation(&aniRainbow, MODE_EXTEND);
-//  registerAnimation(&aniTheater, MODE_EXTEND);
-//  registerAnimation(&aniBreathe, MODE_EXTEND);
+	registerAnimation(&aniSparkle, MODE_EXTEND);
+	registerAnimation(&aniParticle, MODE_EXTEND);
+	registerAnimation(&aniMultiParticle, MODE_EXTEND);
+	registerAnimation(&aniConfetti, MODE_EXTEND);
+	registerAnimation(&aniConfetti2, MODE_EXTEND);
+	registerAnimation(&aniFlash, MODE_EXTEND);
+	registerAnimation(&aniRainbow, MODE_EXTEND);
+	registerAnimation(&aniWipe, MODE_EXTEND);
+	registerAnimation(&aniZoom, MODE_EXTEND);
+	registerAnimation(&aniTheater, MODE_EXTEND);
+	registerAnimation(&aniBreathe, MODE_EXTEND);
 
-  
 	curTime = millis();
 	lastSwapTime = curTime;
 
@@ -177,10 +177,47 @@ int getLoopAnimation()
 	return aniList.current;
 }
 
+CHSV RgbToHsv(CRGB rgb)
+{
+    CHSV hsv;
+    unsigned char rgbMin, rgbMax;
+
+    rgbMin = rgb.r < rgb.g ? (rgb.r < rgb.b ? rgb.r : rgb.b) : (rgb.g < rgb.b ? rgb.g : rgb.b);
+    rgbMax = rgb.r > rgb.g ? (rgb.r > rgb.b ? rgb.r : rgb.b) : (rgb.g > rgb.b ? rgb.g : rgb.b);
+
+    hsv.v = rgbMax;
+    if (hsv.v == 0)
+    {
+        hsv.h = 0;
+        hsv.s = 0;
+        return hsv;
+    }
+
+    hsv.s = 255 * long(rgbMax - rgbMin) / hsv.v;
+    if (hsv.s == 0)
+    {
+        hsv.h = 0;
+        return hsv;
+    }
+
+    if (rgbMax == rgb.r)
+        hsv.h = 0 + 43 * (rgb.g - rgb.b) / (rgbMax - rgbMin);
+    else if (rgbMax == rgb.g)
+        hsv.h = 85 + 43 * (rgb.b - rgb.r) / (rgbMax - rgbMin);
+    else
+        hsv.h = 171 + 43 * (rgb.r - rgb.g) / (rgbMax - rgbMin);
+
+    return hsv;
+}
+
 void runAnimation(Animation *a)
 {
-	if (state.colorOverride)
-		a->ColorOverride(state.color);
+	if (state.colorOverride) {
+		CHSV colorHsv = RgbToHsv(state.color);
+		a->ColorOverride(state.color, colorHsv);
+	} else {
+		a->DisableColorOverride();
+	}
 
 	if (state.pause)
 		a->Pause();
@@ -211,5 +248,6 @@ void loop()
 
 	unsigned long duration = millis() - curTime;
 	if (duration < minDelay)
+
 		delay(minDelay - duration);
 }

@@ -13,14 +13,11 @@ class EffectParticle : public EffectStrip
 {
 public:
 	int streakSize;
-	unsigned char hue;
-	unsigned char hueBegin;
-  unsigned char brightness;
+	unsigned char hueLength;
 	bool reverse;
 	bool gradient;
 	EffectParticle() {
 		this->duration = BPM128;
-    brightness = 255;
 		reverse = false;
 	}
 	virtual void Draw(LedStrip* strip) override;
@@ -72,7 +69,6 @@ public:
   EffectBreathe() {
     this->duration = BPM128;
   }
-  unsigned char hue; 
   int size;
   int offset;
   float lightPercent = 0.7;

@@ -18,13 +18,16 @@ public:
 	int duration; //Try to make this a number with many factors.
 	int progessOffset;
 	float speed;
-	CRGB color;
+	CRGB colorRgb;
+	CHSV colorHsv;
+	CRGB forceColorRgb;
+	CHSV forceColorHsv;
+	bool forceColor = false;
 
 	Effect() : duration(0),
 			   speed(1.0f)
 	{
 		Reset();
-		color = CHSV(HUE_GREEN, 128, 100);
 	}
 
 	virtual void Update(unsigned long time);
